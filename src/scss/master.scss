@@ -1,0 +1,13 @@
+@import "fonts.scss";
+@import "form.scss";
+@import "loading_icon.scss";
+@import "navbar.scss";
+@import "table.scss";
+
+html, body {
+    @include set-font;
+    background-color: #282c34;
+    width: 100%;
+    margin: 0;
+}
+

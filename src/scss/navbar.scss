@@ -1,0 +1,46 @@
+.nav-container {
+    height: 3em;
+    margin: 0 auto;
+    background-color: #333;
+    padding: 3px;
+
+    .logo {
+        float: left;
+        width: 5em;
+        height: auto;
+    }
+
+    .logo:hover {
+        transform: scale(1.05);
+        transition: all 0.2s;
+    }
+
+    .navlist {
+        margin-left: 3px;
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        display: inline-block;
+    
+        li {
+            float: left;
+            display: inline;
+        }
+        
+        li a {
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 14px 12px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        
+        li a:hover {
+            transform: scale(1.05);
+            background-color: #111;
+            transition: all 0.2s;
+        }
+    }
+}

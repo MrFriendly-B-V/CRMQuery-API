@@ -1,0 +1,13 @@
+th {
+    @include set-font('Roboto', 100, normal);
+    font-size: 1.3em;
+}
+
+table {
+    border-spacing: 0;
+}
+
+td,th {
+    border-right: 1px solid black;
+    border-bottom: 1px solid black;
+}

@@ -1,0 +1,13 @@
+#PHP
+credentials.php
+
+#CSS/JS
+css/
+js/
+
+#Node
+node_modules/
+
+#JSON data 
+known_cities.json
+

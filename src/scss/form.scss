@@ -1,0 +1,39 @@
+.formHolder {
+    width: 100%;
+    overflow: auto;
+    margin: 10px 0;
+    overflow: visible;
+
+    form {
+        display: grid;
+        place-content: center;
+        width: 100%;
+
+        .formInput {
+            font-size: 1em;
+            width: 100%;
+            margin: -5px;
+        }
+
+        .formLabel {
+            color: white;
+            font-size: 2em;
+            margin: 0;
+            padding: 0;
+        }
+
+        .submitButton {
+            width: 5em;
+            height: 4ch;
+            border: 1px solid white;
+            border-radius: 5px;
+            background-color: white;
+        }
+
+        .submitButton:hover {
+            background-color: gray;
+            border: 1px solid gray;
+            transition: all 0.2s;
+        }
+    }
+}
