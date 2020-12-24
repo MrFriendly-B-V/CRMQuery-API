@@ -168,7 +168,7 @@ function getContacts($accountId, $selectorContact, $client, $ignoreSelector) {
     $where = [
         [
             'type' => 'linkedWith',
-            'attribute' => 'accounts',
+            'attribute' => 'account',
             'value' => $accountId
         ],
         [
