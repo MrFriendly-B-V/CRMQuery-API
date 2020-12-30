@@ -138,6 +138,7 @@ function queryApi(): void {
             for(var j = 0; j < returnTypes.length; j++) {
                 if(returnTypes[j] == 'producten') continue;
                 if(returnTypes[j] == 'relatieType') continue;
+                if(returnTypes[j] == 'relatieNaam') continue;
 
                 var returnType: string = returnTypes[cellIndex];
                 var header: HTMLElement = document.createElement('th');
@@ -159,6 +160,12 @@ function queryApi(): void {
                 relatieTypeHeader.innerHTML = "Relatie Type";
                 tableHeaderRow.append(relatieTypeHeader);
             }
+            
+            if(returnTypes.includes('relatieNaam')) {
+                var relatieTypeHeader = document.createElement('th');
+                relatieTypeHeader.innerHTML = "Relatie naam";
+                tableHeaderRow.append(relatieTypeHeader);
+            }
 
             //Array to keep track which Contacts we've already had
             var contactIds = [];
@@ -168,6 +175,7 @@ function queryApi(): void {
                 var item = jsonResult[i];
                 var accountProducten = item.accountProducten;
                 var relatieType = item.relatieType;
+                var relatieNaam = item.relatieNaam;
                 var contactList = item.contacts.list;
 
                 //Iterate over every contact in the current account
@@ -195,6 +203,7 @@ function queryApi(): void {
                     for(var k = 0; k < returnTypes.length; k++) {
                         if(returnTypes[k] == 'producten') continue;
                         if(returnTypes[k] == 'relatieType') continue;
+                        if(returnTypes[k] == 'relatieNaam') continue;
 
                         var cell = contactRow.insertCell(rowSize);
                         cell.innerHTML = contact[returnTypes[k]];
@@ -215,6 +224,12 @@ function queryApi(): void {
                         var relatieTypeCell = contactRow.insertCell(rowSize);
                         relatieTypeCell.innerHTML = relatieType;
                         relatieTypeCell.classList.add("resultCell");
+                    }
+
+                    if(returnTypes.includes('relatieNaam')) {
+                        var relatieNaamCell = contactRow.insertCell(rowSize);
+                        relatieNaamCell.innerHTML = relatieNaam;
+                        relatieNaamCell.classList.add("resultCell");
                     }
                 }
             }

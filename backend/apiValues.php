@@ -8,7 +8,8 @@ $returnValues = [
     'producten',
     'description',
     'phoneNumber',
-    'relatieType'
+    'relatieType',
+    'relatieNaam'
 ];
 
 $accountTypeValues = [
