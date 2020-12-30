@@ -76,7 +76,8 @@ foreach($accountValues as $account) {
     array_push($result, [
         'accountId' => $account['id'],
         'accountProducten' => $account['producten'],
-        'contacts' => $contacts
+        'contacts' => $contacts,
+        'relatieType' => $account['relatieType']
     ]);
 }
 
@@ -146,7 +147,7 @@ function getAccounts($product, $type, $locationType, $province) {
         'where' => $where,
         'orderBy' => 'createdAt',
         'order' => 'desc',
-        'select' => 'id,producten,shippingAddressCity'
+        'select' => 'id,producten,shippingAddressCity,relatieType'
     ];
 
     //Make the request

@@ -29,7 +29,7 @@
         <?php 
         	//Check if the user is authenticated to visit this page
             $from = "https://intern.mrfriendly.nl/crmquery";
-            require "../common_login.php" 
+            //require "../common_login.php" 
         ?>
 
         <div class="root">

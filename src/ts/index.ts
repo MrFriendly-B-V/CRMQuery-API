@@ -137,6 +137,7 @@ function queryApi(): void {
             var cellIndex = 0;
             for(var j = 0; j < returnTypes.length; j++) {
                 if(returnTypes[j] == 'producten') continue;
+                if(returnTypes[j] == 'relatieType') continue;
 
                 var returnType: string = returnTypes[cellIndex];
                 var header: HTMLElement = document.createElement('th');
@@ -153,6 +154,12 @@ function queryApi(): void {
                 tableHeaderRow.append(productenHeader);
             }
 
+            if(returnTypes.includes('relatieType')) {
+                var relatieTypeHeader = document.createElement('th');
+                relatieTypeHeader.innerHTML = "Relatie Type";
+                tableHeaderRow.append(relatieTypeHeader);
+            }
+
             //Array to keep track which Contacts we've already had
             var contactIds = [];
 
@@ -160,6 +167,7 @@ function queryApi(): void {
             for(var i = 0; i < jsonResult.length; i++) {
                 var item = jsonResult[i];
                 var accountProducten = item.accountProducten;
+                var relatieType = item.relatieType;
                 var contactList = item.contacts.list;
 
                 //Iterate over every contact in the current account
@@ -186,6 +194,7 @@ function queryApi(): void {
                     //and add those return types to the results table
                     for(var k = 0; k < returnTypes.length; k++) {
                         if(returnTypes[k] == 'producten') continue;
+                        if(returnTypes[k] == 'relatieType') continue;
 
                         var cell = contactRow.insertCell(rowSize);
                         cell.innerHTML = contact[returnTypes[k]];
@@ -199,7 +208,13 @@ function queryApi(): void {
                     if(returnTypes.includes('producten')) {
                         var productenCell = contactRow.insertCell(rowSize);
                         productenCell.innerHTML = accountProducten;
-                        cell.classList.add("resultCell");
+                        productenCell.classList.add("resultCell");
+                    }
+
+                    if(returnTypes.includes('relatieType')) {
+                        var relatieTypeCell = contactRow.insertCell(rowSize);
+                        relatieTypeCell.innerHTML = relatieType;
+                        relatieTypeCell.classList.add("resultCell");
                     }
                 }
             }
