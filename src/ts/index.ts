@@ -1,4 +1,9 @@
-function populateForm(): void {
+//Style
+import "../scss/master.scss";
+
+import * as $ from "jquery";
+
+export function populateForm(): void {
     var loadingIcon = document.getElementById('loader');
     loadingIcon.style.visibility = 'hidden';
 
@@ -88,7 +93,7 @@ function createOptionDOM(value: string) {
 }
 
 //Function is called onClicked for the submit button
-function queryApi(): void {
+export function queryApi(): void {
     var loadingIcon = document.getElementById('loader');
     loadingIcon.style.visibility = 'visible';
 
@@ -139,6 +144,8 @@ function queryApi(): void {
                 if(returnTypes[j] == 'producten') continue;
                 if(returnTypes[j] == 'relatieType') continue;
                 if(returnTypes[j] == 'relatieNaam') continue;
+                if(returnTypes[j] == 'shippingAddressCity') continue;
+                if(returnTypes[j] == 'shippingAddressState') continue;
 
                 var returnType: string = returnTypes[cellIndex];
                 var header: HTMLElement = document.createElement('th');
@@ -167,8 +174,20 @@ function queryApi(): void {
                 tableHeaderRow.append(relatieTypeHeader);
             }
 
+            if(returnTypes.includes('shippingAddressState')) {
+                var shippingAddressState = document.createElement('th');
+                shippingAddressState.innerHTML = "Relatie provincie";
+                tableHeaderRow.append(shippingAddressState);
+            }
+
+            if(returnTypes.includes('shippingAddressCity')) {
+                var shippingAddressCity = document.createElement('th');
+                shippingAddressCity.innerHTML = "Relatie stad";
+                tableHeaderRow.append(shippingAddressCity);
+            }
+
             //Array to keep track which Contacts we've already had
-            var contactIds = [];
+            var contactIds: string[] = [];
 
             //Iterate over all provided accounts (leads)
             for(var i = 0; i < jsonResult.length; i++) {
@@ -176,6 +195,8 @@ function queryApi(): void {
                 var accountProducten = item.accountProducten;
                 var relatieType = item.relatieType;
                 var relatieNaam = item.relatieNaam;
+                var relatieStad = item.shippingAddressCity;
+                var relatieProvincie = item.shippingAddressState;
                 var contactList = item.contacts.list;
 
                 //Iterate over every contact in the current account
@@ -204,6 +225,8 @@ function queryApi(): void {
                         if(returnTypes[k] == 'producten') continue;
                         if(returnTypes[k] == 'relatieType') continue;
                         if(returnTypes[k] == 'relatieNaam') continue;
+                        if(returnTypes[k] == 'shippingAddressCity') continue;
+                        if(returnTypes[k] == 'shippingAddressState') continue;
 
                         var cell = contactRow.insertCell(rowSize);
                         cell.innerHTML = contact[returnTypes[k]];
@@ -231,10 +254,23 @@ function queryApi(): void {
                         relatieNaamCell.innerHTML = relatieNaam;
                         relatieNaamCell.classList.add("resultCell");
                     }
+
+                    if(returnTypes.includes('shippingAddressCity')) {
+                        var shippingAddressCityCell = contactRow.insertCell(rowSize);
+                        shippingAddressCityCell.innerHTML = relatieStad;
+                        shippingAddressCityCell.classList.add("resultCell");
+                    }
+
+                    if(returnTypes.includes('shippingAddressState')) {
+                        var shippingAddressStateCell = contactRow.insertCell(rowSize);
+                        shippingAddressStateCell.innerHTML = relatieProvincie;
+                        shippingAddressStateCell.classList.add("resultCell");
+                    }
                 }
             }
 
             loadingIcon.style.visibility = 'hidden';
+            var downloadBtn = document.getElementById("downloadResultsBtn").style.visibility = 'visible';
         }
     });
 }
@@ -248,7 +284,7 @@ function getApiValues(): JQuery.jqXHR {
 }
 
 // Quick and simple export target #table_id into a csv
-function download_table_as_csv(table_id, separator = ',') {
+export function download_table_as_csv(table_id: string, separator = ',') {
     // Select rows from table_id
     var rows = document.querySelectorAll('table#' + table_id + ' tr');
     // Construct csv

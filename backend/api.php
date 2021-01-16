@@ -78,7 +78,9 @@ foreach($accountValues as $account) {
         'accountProducten' => $account['producten'],
         'contacts' => $contacts,
         'relatieType' => $account['relatieType'],
-        'relatieNaam' => $account['name']
+        'relatieNaam' => $account['name'],
+        'shippingAddressCity' => $account['shippingAddressCity'],
+        'shippingAddressState' => $account['shippingAddressState']
     ]);
 }
 
@@ -99,6 +101,10 @@ function getAccounts($product, $type, $locationType, $province) {
         [
             'type' => 'isFalse',
             'attribute' => 'exrelatie'
+        ],
+        [
+            'type' => 'isFalse',
+            'attribute' => 'excludeFromMailing'
         ]
     ];
 
@@ -132,7 +138,7 @@ function getAccounts($product, $type, $locationType, $province) {
         ]);
     }
 
-    //If we do not ignore the account's visit address' privince query,
+    //If we do not ignore the account's visit address' province query,
     //add it to the 'where'
     if(!in_array('Ignore Filter', $province)) {
         array_push($where, [
@@ -148,7 +154,7 @@ function getAccounts($product, $type, $locationType, $province) {
         'where' => $where,
         'orderBy' => 'createdAt',
         'order' => 'desc',
-        'select' => 'id,producten,shippingAddressCity,relatieType,name'
+        'select' => 'id,producten,shippingAddressCity,shippingAddressState,relatieType,name'
     ];
 
     //Make the request
@@ -176,6 +182,10 @@ function getContacts($accountId, $selectorContact, $client, $ignoreSelector) {
         [
             'type' => 'isFalse',
             'attribute' => 'emailAddressIsOptedOut'
+        ],
+        [
+            'type' => 'isFalse',
+            'attribute' => 'geenmassmailing'
         ]
     ];
     

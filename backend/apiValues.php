@@ -9,7 +9,9 @@ $returnValues = [
     'description',
     'phoneNumber',
     'relatieType',
-    'relatieNaam'
+    'relatieNaam',
+    'shippingAddressCity',
+    'shippingAddressState'
 ];
 
 $accountTypeValues = [

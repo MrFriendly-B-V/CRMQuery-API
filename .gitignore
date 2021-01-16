@@ -1,13 +1,12 @@
 #PHP
 credentials.php
 
-#CSS/JS
-css/
-js/
+#Generated code
+dist/
 
 #Node
 node_modules/
 
-#JSON data 
+#JSON data
 known_cities.json
 

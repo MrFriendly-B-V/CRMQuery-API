@@ -13,10 +13,7 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.8.7/chosen.min.css" integrity="sha512-yVvxUQV0QESBt1SyZbNJMAwyKvFTLMyXSyBHDO4BG5t7k/Lw34tyqlSDlKIrIENIzCl+RVUNjmCPG+V/GMesRw==" crossorigin="anonymous" />
 
         <!--Scripts-->
-        <script src="js/index.js"></script>
-
-        <!--Stylesheets-->
-        <link href="css/master.min.css" rel="stylesheet">
+        <script src="dist/main.js"></script>
 
         <title> EspoCRM API</title>
     </head>
@@ -47,46 +44,46 @@
 
             <!--Form for filters-->
             <div class="formHolder">
-                <form id='queryForm' name='queryForm' target='hiddenIframe' method='post' onsubmit="queryApi()">
+                <form id='queryForm' name='queryForm' target='hiddenIframe' method='post' onsubmit="CRMQuery.queryApi()">
                     <label class="formElement formLabel" for="accountProductQuery"> Afgenomen Producten Relatie</label><br>
                     <select class="formElement Forminput chosen-select" name="accountProductQuery" id="accountProductQuery" multiple required>
                         <option value=""></option>
-                        <!--Populated by index.js#populateForm()-->
+                        <!--Populated by index.ts#populateForm()-->
                     </select><br>
 
                     <label class="formElement formLabel" for="accountTypeQuery"> Type Relatie</label><br>
                     <select class="formElement Forminput chosen-select" name="accountTypeQuery" id="accountTypeQuery" multiple required>
                         <option value=""></option>
-                        <!--Populated by index.js#populateForm()-->
+                        <!--Populated by index.ts#populateForm()-->
                     </select><br>
 
                     <label class="formElement formLabel" for="accountLocationType"> Soort Locatie</label><br>
                     <select class="formElement Forminput chosen-select" name="accountLocationType" id="accountLocationType" multiple required>
                         <option value=""></option>
-                        <!--Populated by index.js#populateForm()-->
+                        <!--Populated by index.ts#populateForm()-->
                     </select><br>
 
                     <label class="formElement formLabel" for="provinceVisitAddress"> Provincie Bezoekadres</label><br>
                     <select class="formElement Forminput chosen-select" name="provinceVisitAddress" id="provinceVisitAddress" multiple required>
                         <option value=""></option>
-                        <!--Populated by index.js#populateForm()-->
+                        <!--Populated by index.ts#populateForm()-->
                     </select><br>
 
                     <label class="formElement formLabel" for="cityVisitAddress"> Stad Bezoekadres</label><br>
                     <select class="formElement Forminput tagging" name="cityVisitAddress" id="cityVisitAddress" multiple required>
-                        <!--Populated by index.js#populateForm()-->
+                        <!--Populated by index.ts#populateForm()-->
                     </select><br>
 
                     <label class="formElement formLabel" for="contactQuerySelector"> Contact Rol</label><br>
                     <select class="formElement Forminput chosen-select" name="contactQuerySelector" id="contactQuerySelector" multiple required>
                         <option value=""></option>
-                        <!--Populated by index.js#populateForm()-->
+                        <!--Populated by index.ts#populateForm()-->
                     </select><br>
 
                     <label class="formElement formLabel" for="returnType"> Return Values </label><br>
                     <select class="formElement Forminput chosen-select" name="returnType" id="returnType" multiple required>
                         <option value=""></option>
-                        <!--Populated by index.js#populateForm()-->
+                        <!--Populated by index.ts#populateForm()-->
                     </select><br>
 
                     <input class="formElement submitButton" type="submit"><br>
@@ -98,14 +95,14 @@
 
             <!--Results from the API-->
             <h2 class="resultLabel"> Result </h2>
-            <button onclick="download_table_as_csv('resultTable', ',');">Download as CSV</button>
+            <button id="downloadResultsBtn" class="downloadResultsBtn" onclick="CRMQuery.download_table_as_csv('resultTable', ',');">Download as CSV</button>
             <table id='resultTable'>
-                <!--Populated by index.js#queryApi()-->
+                <!--Populated by index.ts#queryApi()-->
             </table>
             <iframe name='hiddenIframe' style="display:none;" width="1px" heigth="1px"></iframe>
         </div>
 
         <!--Fill in the form options with their values-->
-        <script> populateForm() </script>
+        <script> CRMQuery.populateForm() </script>
     </body>
 </html>
