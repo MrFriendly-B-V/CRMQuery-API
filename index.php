@@ -1,7 +1,6 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-		<?php require "../common_include.php"; ?>
 
         <!--Third party scripts-->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
@@ -13,7 +12,7 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.8.7/chosen.min.css" integrity="sha512-yVvxUQV0QESBt1SyZbNJMAwyKvFTLMyXSyBHDO4BG5t7k/Lw34tyqlSDlKIrIENIzCl+RVUNjmCPG+V/GMesRw==" crossorigin="anonymous" />
 
         <!--Scripts-->
-        <script src="dist/main.js"></script>
+        <script src="dist/dist.js"></script>
 
         <title> EspoCRM API</title>
     </head>
@@ -36,7 +35,7 @@
 				<div class="nav-container">
 					<a href="https://mrfriendly.nl/"><img alt="logo" class="logo" src="images/logo.png"></a>
 					<ul class="navlist">
-						<li><a href="https://intern.mrfriendly.nl/dashboard" class="active"> Dashboard </a></li>
+						<li><a href="https://dashboard.intern.mrfriendly.nl" class="active"> Dashboard </a></li>
 						<li><a href="https://mrfriendly.nl"> Website </a></li>
 					</ul>
 				</div>

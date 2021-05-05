@@ -5,7 +5,7 @@ module.exports = {
     devtool: 'inline-source-map',
 	entry: './src/ts/index.ts',
 	output: {
-		filename: 'main.js',
+		filename: 'dist.js',
         path: path.resolve(__dirname, 'dist'),
         libraryTarget: 'var',
         library: 'CRMQuery'
@@ -14,7 +14,7 @@ module.exports = {
         rules: [
             {
                 test: /\.tsx?$/,
-                loader: 'ts-loader'
+                loader: 'awesome-typescript-loader'
             },
             {
                 test: /\.scss$/,
@@ -33,5 +33,6 @@ module.exports = {
         // require("jquery") is external and available
         //  on the global var jQuery
         "jquery": "jQuery"
-    }
+    },
+    mode: 'production'
 };
