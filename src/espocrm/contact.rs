@@ -1,9 +1,23 @@
 use crate::appdata::AppData;
 use reqwest::Method;
-use std::future::Future;
 use espocrm_rs::{Where, FilterType, Params, Order, Value, NoGeneric};
+use serde::{Deserialize, Serialize};
 
-pub async fn get_contacts(appdata: &AppData, account_id: Option<String>, contact_roles: Option<String>) -> impl Future<Output=reqwest::Result<reqwest::Response>> + '_{
+#[derive(Deserialize)]
+struct Response {
+    list: Vec<Contact>
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Contact {
+    pub id: String,
+    pub name: String,
+    pub email_address: String,
+    pub phone_number: String,
+}
+
+pub async fn get_contacts(appdata: &AppData, account_id: Option<String>, contact_roles: Option<String>) -> Result<Vec<Contact>, String> {
     let mut where_filter = Vec::new();
 
     where_filter.push(Where {
@@ -21,8 +35,8 @@ pub async fn get_contacts(appdata: &AppData, account_id: Option<String>, contact
     if account_id.is_some() {
         where_filter.push(Where {
             r#type: FilterType::LinkedWith,
-            attribute: "account".to_string(),
-            value: Some(Value::string(account_id.unwrap()))
+            attribute: "accounts".to_string(),
+            value: Some(Value::array(vec![Value::string(account_id.unwrap())]))
         });
     }
 
@@ -41,5 +55,11 @@ pub async fn get_contacts(appdata: &AppData, account_id: Option<String>, contact
         .set_where(where_filter)
         .build();
 
-    appdata.espo_client.request::<NoGeneric>(Method::GET, "Contact".to_string(), Some(params), None)
+    let result = appdata.espo_client.request::<NoGeneric>(Method::GET, "Contact".to_string(), Some(params), None).await;
+    if result.is_err() {
+        Err(result.err().unwrap().to_string())
+    } else {
+        let response: Response = result.unwrap().json().await.unwrap();
+        Ok(response.list)
+    }
 }

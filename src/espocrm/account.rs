@@ -1,8 +1,26 @@
 use reqwest::Method;
 use crate::appdata::AppData;
 use espocrm_rs::{Where, FilterType, Value, Params, Order, NoGeneric};
+use serde::Deserialize;
 
-pub async fn get_accounts(appdata: &AppData, product: Option<String>, account_type: Option<String>, location_type: Option<String>, province: Option<String>) -> reqwest::Result<reqwest::Response> {
+#[derive(Deserialize)]
+struct Response {
+    list: Vec<AccountData>
+}
+
+#[derive(Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AccountData {
+    pub id:                     String,
+    pub name:                   String,
+    pub shipping_address_city:  String,
+    pub shipping_address_state: String,
+    pub created_at:             String,
+    pub producten:              Vec<String>,
+    pub relatie_type:           Vec<String>,
+}
+
+pub async fn get_accounts(appdata: &AppData, product: Option<String>, account_type: Option<String>, location_type: Option<String>, province: Option<String>) -> Result<Vec<AccountData>, String> {
     let mut filter = Vec::new();
 
     filter.push(Where {
@@ -63,5 +81,12 @@ pub async fn get_accounts(appdata: &AppData, product: Option<String>, account_ty
         .set_select("id,producten,shippingAddressCity,shippingAddressState,relatieType,name")
         .build();
 
-    appdata.espo_client.request::<NoGeneric>(Method::GET, "Account".to_string(), Some(params), None).await
+    let response = appdata.espo_client.request::<NoGeneric>(Method::GET, "Account".to_string(), Some(params), None).await;
+    if response.is_err() {
+        Err(response.err().unwrap().to_string())
+    } else {
+        let content = response.unwrap();
+        let response_data: Response = content.json().await.unwrap();
+        Ok(response_data.list)
+    }
 }

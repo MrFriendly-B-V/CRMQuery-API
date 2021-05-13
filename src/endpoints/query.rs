@@ -1,12 +1,24 @@
 use actix_web::{web, get, HttpRequest, HttpResponse};
 use crate::AppData;
+use crate::espocrm::contact::{get_contacts, Contact};
+use serde::Serialize;
+use std::future::Future;
+use std::pin::Pin;
 
-struct EspoAccountResponse {
-    list: Vec<Account>
+#[derive(Serialize)]
+pub struct Response {
+    result: Vec<ResultData>
 }
 
-struct Account {
-
+#[derive(Serialize)]
+pub struct ResultData {
+    account_id: String,
+    account_products: Vec<String>,
+    contacts: Vec<Contact>,
+    account_type: Vec<String>,
+    account_name: String,
+    shipping_address_city: String,
+    shipping_address_state: String
 }
 
 #[get("/get")]
@@ -30,15 +42,60 @@ pub async fn get(req: HttpRequest, appdata: web::Data<AppData>) -> HttpResponse 
 
     let accounts = crate::espocrm::account::get_accounts(&appdata, products, relation_type, location_type, province).await;
     if accounts.is_err()  {
-        return HttpResponse::InternalServerError().finish();
+        return HttpResponse::InternalServerError().body(accounts.err().unwrap());
     }
 
     let accounts_unwrapped = accounts.unwrap();
-    println!("{:?}", accounts_unwrapped.text().await.unwrap());
+
+    let mut results: Vec<ResultData> = Vec::new();
+    let mut processors: Vec<Box<dyn Future<Output=ResultData>>> = Vec::new();
+    'account_loop: for account in accounts_unwrapped {
+        if city.is_some() {
+            let city_lower = account.shipping_address_city.to_lowercase();
+
+            let mut r#match = false;
+            for city in city.clone().unwrap().split(",").collect::<Vec<&str>>() {
+                if city == &city_lower {
+                    r#match = true;
+                }
+            }
+
+            if !r#match {
+                continue 'account_loop;
+            }
+        }
+
+        let contacts = get_contacts(&appdata, Some(account.id.clone()), contact_roll.clone());
+
+        let account_clone = account.clone();
+        let processor = async {
+            let data = contacts.await;
+            if data.is_err() {
+
+            }
+
+            let result = ResultData {
+                account_id: account_clone.id.clone(),
+                account_products: account_clone.producten,
+                contacts: data.unwrap(),
+                account_type: account_clone.relatie_type,
+                account_name: account_clone.name,
+                shipping_address_city: account_clone.shipping_address_city,
+                shipping_address_state: account_clone.shipping_address_state
+            };
+
+            result
+        };
+        processors.push(Box::new(processor));
+    }
+
+    for processor in processors {
+        let result = Pin::from(processor).await;
+        results.push(result);
+    }
 
     runtime.shutdown_background();
-
-    HttpResponse::Ok().finish()
+    HttpResponse::Ok().json(Response { result: results })
 }
 
 fn str_to_string_option(input: Option<&str>) -> Option<String> {
