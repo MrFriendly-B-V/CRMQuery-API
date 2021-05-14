@@ -11,10 +11,10 @@ struct Response {
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Contact {
-    pub id: String,
-    pub name: String,
-    pub email_address: String,
-    pub phone_number: String,
+    pub id:             String,
+    pub name:           String,
+    pub email_address:  Option<String>,
+    pub phone_number:   Option<String>,
 }
 
 pub async fn get_contacts(appdata: &AppData, account_id: Option<String>, contact_roles: Option<String>) -> Result<Vec<Contact>, String> {

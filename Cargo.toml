@@ -14,5 +14,4 @@ reqwest = "0.11.3"
 espocrm-rs = "0.2.1"
 actix-web = "3.3.2"
 actix-cors = "0.5.4"
-qstring = "0.7.2"
 tokio = { version = "1.5.0", features = ["full"]}

@@ -1,9 +1,19 @@
-use actix_web::{web, get, HttpRequest, HttpResponse};
+use actix_web::{web, post, HttpResponse};
 use crate::AppData;
 use crate::espocrm::contact::{get_contacts, Contact};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::future::Future;
 use std::pin::Pin;
+
+#[derive(Deserialize)]
+pub struct Request {
+    products:       Option<String>,
+    relation_type:  Option<String>,
+    location_type:  Option<String>,
+    province:       Option<String>,
+    city:           Option<String>,
+    contact_role:   Option<String>,
+}
 
 #[derive(Serialize)]
 pub struct Response {
@@ -12,35 +22,22 @@ pub struct Response {
 
 #[derive(Serialize)]
 pub struct ResultData {
-    account_id: String,
-    account_products: Vec<String>,
-    contacts: Vec<Contact>,
-    account_type: Vec<String>,
-    account_name: String,
-    shipping_address_city: String,
-    shipping_address_state: String
+    account_id:             String,
+    account_products:       Option<Vec<String>>,
+    contacts:               Vec<Contact>,
+    account_type:           Option<Vec<String>>,
+    account_name:           String,
+    account_email:          Option<String>,
+    shipping_address_city:  Option<String>,
+    shipping_address_state: Option<String>
 }
 
-#[get("/get")]
-pub async fn get(req: HttpRequest, appdata: web::Data<AppData>) -> HttpResponse {
-    let qstring = qstring::QString::from(req.query_string());
-
-    let products = str_to_string_option(qstring.get("products"));
-    let relation_type = str_to_string_option(qstring.get("relation_type"));
-    let location_type = str_to_string_option(qstring.get("relation_type"));
-    let province = str_to_string_option(qstring.get("province"));
-    let city = str_to_string_option(qstring.get("city"));
-    let contact_roll = str_to_string_option(qstring.get("contact_roll"));
-    let return_values = str_to_string_option(qstring.get("return_values"));
-
-    if return_values.is_none() {
-        return HttpResponse::BadRequest().finish();
-    }
-
+#[post("/query")]
+pub async fn get(form: web::Form<Request>, appdata: web::Data<AppData>) -> HttpResponse {
     let runtime = tokio::runtime::Runtime::new().expect("Unable to create Tokio runtime");
     let _guard = runtime.enter();
 
-    let accounts = crate::espocrm::account::get_accounts(&appdata, products, relation_type, location_type, province).await;
+    let accounts = crate::espocrm::account::get_accounts(&appdata, form.products.clone(), form.relation_type.clone(), form.location_type.clone(), form.province.clone()).await;
     if accounts.is_err()  {
         return HttpResponse::InternalServerError().body(accounts.err().unwrap());
     }
@@ -50,11 +47,13 @@ pub async fn get(req: HttpRequest, appdata: web::Data<AppData>) -> HttpResponse 
     let mut results: Vec<ResultData> = Vec::new();
     let mut processors: Vec<Box<dyn Future<Output=ResultData>>> = Vec::new();
     'account_loop: for account in accounts_unwrapped {
-        if city.is_some() {
-            let city_lower = account.shipping_address_city.to_lowercase();
+
+        if form.city.is_some() {
+
+            let city_lower = account.shipping_address_city.clone().unwrap().to_lowercase();
 
             let mut r#match = false;
-            for city in city.clone().unwrap().split(",").collect::<Vec<&str>>() {
+            for city in form.city.clone().unwrap().split(",").collect::<Vec<&str>>() {
                 if city == &city_lower {
                     r#match = true;
                 }
@@ -65,8 +64,7 @@ pub async fn get(req: HttpRequest, appdata: web::Data<AppData>) -> HttpResponse 
             }
         }
 
-        let contacts = get_contacts(&appdata, Some(account.id.clone()), contact_roll.clone());
-
+        let contacts = get_contacts(&appdata, Some(account.id.clone()), form.contact_role.clone().clone());
         let account_clone = account.clone();
         let processor = async {
             let data = contacts.await;
@@ -80,6 +78,7 @@ pub async fn get(req: HttpRequest, appdata: web::Data<AppData>) -> HttpResponse 
                 contacts: data.unwrap(),
                 account_type: account_clone.relatie_type,
                 account_name: account_clone.name,
+                account_email: account_clone.email_address;
                 shipping_address_city: account_clone.shipping_address_city,
                 shipping_address_state: account_clone.shipping_address_state
             };
@@ -96,12 +95,4 @@ pub async fn get(req: HttpRequest, appdata: web::Data<AppData>) -> HttpResponse 
 
     runtime.shutdown_background();
     HttpResponse::Ok().json(Response { result: results })
-}
-
-fn str_to_string_option(input: Option<&str>) -> Option<String> {
-    return if input.is_none() {
-        None
-    } else {
-        Some(input.unwrap().to_string())
-    };
 }

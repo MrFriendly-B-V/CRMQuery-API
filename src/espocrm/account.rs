@@ -13,11 +13,12 @@ struct Response {
 pub struct AccountData {
     pub id:                     String,
     pub name:                   String,
-    pub shipping_address_city:  String,
-    pub shipping_address_state: String,
-    pub created_at:             String,
-    pub producten:              Vec<String>,
-    pub relatie_type:           Vec<String>,
+    pub shipping_address_city:  Option<String>,
+    pub shipping_address_state: Option<String>,
+    pub created_at:             Option<String>,
+    pub producten:              Option<Vec<String>>,
+    pub relatie_type:           Option<Vec<String>>,
+    pub email_address:          Option<String>
 }
 
 pub async fn get_accounts(appdata: &AppData, product: Option<String>, account_type: Option<String>, location_type: Option<String>, province: Option<String>) -> Result<Vec<AccountData>, String> {
@@ -78,7 +79,7 @@ pub async fn get_accounts(appdata: &AppData, product: Option<String>, account_ty
         .set_where(filter)
         .set_order_by("createdAt")
         .set_order(Order::Desc)
-        .set_select("id,producten,shippingAddressCity,shippingAddressState,relatieType,name")
+        .set_select("id,producten,shippingAddressCity,shippingAddressState,relatieType,name,emailAddress")
         .build();
 
     let response = appdata.espo_client.request::<NoGeneric>(Method::GET, "Account".to_string(), Some(params), None).await;
