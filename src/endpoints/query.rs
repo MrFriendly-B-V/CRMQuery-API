@@ -53,7 +53,7 @@ pub async fn get(form: web::Form<Request>, appdata: web::Data<AppData>) -> HttpR
             let city_lower = account.shipping_address_city.clone().unwrap().to_lowercase();
 
             let mut r#match = false;
-            for city in form.city.clone().unwrap().split(",").collect::<Vec<&str>>() {
+            for city in form.city.clone().unwrap().to_lowercase().split(",").collect::<Vec<&str>>() {
                 if city == &city_lower {
                     r#match = true;
                 }
@@ -78,7 +78,7 @@ pub async fn get(form: web::Form<Request>, appdata: web::Data<AppData>) -> HttpR
                 contacts: data.unwrap(),
                 account_type: account_clone.relatie_type,
                 account_name: account_clone.name,
-                account_email: account_clone.email_address;
+                account_email: account_clone.email_address,
                 shipping_address_city: account_clone.shipping_address_city,
                 shipping_address_state: account_clone.shipping_address_state
             };
