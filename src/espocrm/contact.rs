@@ -12,7 +12,7 @@ struct Response {
 #[serde(rename_all = "camelCase")]
 pub struct Contact {
     pub id:             String,
-    pub name:           String,
+    pub last_name:      String,
     pub first_name:     String,
     pub email_address:  Option<String>,
     pub phone_number:   Option<String>
@@ -51,7 +51,7 @@ pub async fn get_contacts(appdata: &AppData, account_id: Option<String>, contact
 
     let params = Params::new()
         .set_order_by("createdAt")
-        .set_select("firstName,name,emailAddress,phoneNumber")
+        .set_select("firstName,lastName,emailAddress,phoneNumber")
         .set_offset(0)
         .set_order(Order::Desc)
         .set_where(where_filter)
