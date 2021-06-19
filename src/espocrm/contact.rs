@@ -1,6 +1,6 @@
 use crate::appdata::AppData;
 use reqwest::Method;
-use espocrm_rs::{Where, FilterType, Params, Order, Value, NoGeneric};
+use espocrm_rs::{Where, FilterType, Params, Order, Value};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
@@ -13,8 +13,9 @@ struct Response {
 pub struct Contact {
     pub id:             String,
     pub name:           String,
+    pub first_name:     String,
     pub email_address:  Option<String>,
-    pub phone_number:   Option<String>,
+    pub phone_number:   Option<String>
 }
 
 pub async fn get_contacts(appdata: &AppData, account_id: Option<String>, contact_roles: Option<String>) -> Result<Vec<Contact>, String> {
@@ -50,12 +51,13 @@ pub async fn get_contacts(appdata: &AppData, account_id: Option<String>, contact
 
     let params = Params::new()
         .set_order_by("createdAt")
+        .set_select("firstName,name,emailAddress,phoneNumber")
         .set_offset(0)
         .set_order(Order::Desc)
         .set_where(where_filter)
         .build();
 
-    let result = appdata.espo_client.request::<NoGeneric>(Method::GET, "Contact".to_string(), Some(params), None).await;
+    let result = appdata.espo_client.request::<()>(Method::GET, "Contact".to_string(), Some(params), None).await;
     if result.is_err() {
         Err(result.err().unwrap().to_string())
     } else {

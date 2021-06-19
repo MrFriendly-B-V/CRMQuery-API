@@ -1,6 +1,6 @@
 use reqwest::Method;
 use crate::appdata::AppData;
-use espocrm_rs::{Where, FilterType, Value, Params, Order, NoGeneric};
+use espocrm_rs::{Where, FilterType, Value, Params, Order};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -82,7 +82,7 @@ pub async fn get_accounts(appdata: &AppData, product: Option<String>, account_ty
         .set_select("id,producten,shippingAddressCity,shippingAddressState,relatieType,name,emailAddress")
         .build();
 
-    let response = appdata.espo_client.request::<NoGeneric>(Method::GET, "Account".to_string(), Some(params), None).await;
+    let response = appdata.espo_client.request::<()>(Method::GET, "Account".to_string(), Some(params), None).await;
     if response.is_err() {
         Err(response.err().unwrap().to_string())
     } else {
