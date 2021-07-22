@@ -29,14 +29,14 @@ impl Default for Config {
 
 impl Config {
     pub fn new() -> Result<Self> {
-        let use_env = std::env::var("USE_ENVIRONMENTAL_VARIABLES");
-        return if use_env.is_err() {
-            trace!("Environmental variable 'USE_ENVIRONMENTAL_VARIABLES' is not set or not valid unicode. Using the configuration file.");
+        let use_env = std::env::var("USE_ENV_VARS");
+        if use_env.is_err() {
+            trace!("Environmental variable 'USE_ENV_VARS' is not set or not valid unicode. Using the configuration file.");
             Self::parse_from_file()
         } else {
-            trace!("Environmental variable 'USE_ENVIRONMENTAL_VARIABLES' is set. Using environmental variables for configuration.");
+            trace!("Environmental variable 'USE_ENV_VARS' is set. Using environmental variables for configuration.");
             Self::parse_from_env()
-        };
+        }
     }
 
     fn parse_from_file() -> Result<Self> {

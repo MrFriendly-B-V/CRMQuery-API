@@ -1,0 +1,9 @@
+refresh_rate: 5 seconds
+appenders:
+  stdout:
+    kind: console
+
+root:
+  level: info
+  appenders:
+    - stdout

@@ -10,6 +10,7 @@ use log::{error as log_error, info, debug};
 
 #[actix_web::main]
 pub async fn main() -> std::io::Result<()> {
+    log4rs::init_file("./log4rs.yaml", Default::default()).unwrap();
     info!("Welcome to CRMQuery by MrFriendly B.V.");
     debug!("Reading configuration...");
     let config = match Config::new() {

@@ -90,5 +90,5 @@ pub async fn get(form: web::Form<Request>, appdata: web::Data<AppData>) -> HttpR
     }
 
     runtime.shutdown_background();
-    HttpResponse::Ok().json(respond!(ResponseData { result: results }))
+    HttpResponse::Ok().body(respond!(ResponseData { result: results }))
 }
