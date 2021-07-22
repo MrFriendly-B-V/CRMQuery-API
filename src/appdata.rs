@@ -1,5 +1,8 @@
 use serde::{Serialize, Deserialize};
 use espocrm_rs::EspoApiClient;
+use crate::result::Result;
+use crate::error;
+use log::trace;
 
 #[derive(Clone)]
 pub struct AppData {
@@ -25,18 +28,18 @@ impl Default for Config {
 }
 
 impl Config {
-    pub fn parse() -> Self {
+    pub fn new() -> Result<Self> {
         let use_env = std::env::var("USE_ENVIRONMENTAL_VARIABLES");
         return if use_env.is_err() {
-            println!("Environmental variable 'USE_ENVIRONMENTAL_VARIABLES' is not set or not valid unicode. Using the configuration file.");
-            Config::parse_from_file()
+            trace!("Environmental variable 'USE_ENVIRONMENTAL_VARIABLES' is not set or not valid unicode. Using the configuration file.");
+            Self::parse_from_file()
         } else {
-            println!("Environmental variable 'USE_ENVIRONMENTAL_VARIABLES' is set. Using environmental variables for configuration.");
-            Config::parse_from_env()
+            trace!("Environmental variable 'USE_ENVIRONMENTAL_VARIABLES' is set. Using environmental variables for configuration.");
+            Self::parse_from_env()
         };
     }
 
-    fn parse_from_file() -> Self {
+    fn parse_from_file() -> Result<Self> {
         use std::fs;
         use std::path;
 
@@ -52,48 +55,40 @@ impl Config {
         }
 
         if !path.exists() {
-            fs::create_dir_all(path.as_path()).expect("Unable to create Configuration directory.");
+            match fs::create_dir_all(path.as_path()) {
+                Ok(_) => {},
+                Err(e) => return Err(error!(e, "Failed to create configuration directory"))
+            }
         }
 
         path.push("config.yml");
         if !path.exists() {
-            println!("Configuration file did not exist and has been created. Please configure CRMQuery before restarting. You can find the configuration file at '{}'", path.as_path().to_str().unwrap());
-            fs::write(path.as_path(), serde_yaml::to_string(&Config::default()).unwrap()).expect("Unable to write Configuration file.");
+            let default_serialized = match serde_yaml::to_string(&Config::default()) {
+                Ok(ds) => ds,
+                Err(e) => return Err(error!(e, "Failed to serialize default configuration"))
+            };
 
-            std::process::exit(0);
+            match fs::write(path.as_path(), default_serialized) {
+                Ok(_) => Ok(Self::default()),
+                Err(e) => Err(error!(e, "Failed to write default configuration to file"))
+            }
         } else {
-            println!("Configuration file at '{}' exists.", path.as_path().to_str().unwrap());
-            let config_contents = fs::read_to_string(path.as_path()).expect("Unable to read Configuration file.");
+            let config_contents = match fs::read_to_string(path.as_path()) {
+                Ok(cc) => cc,
+                Err(e) => return Err(error!(e, "Failed to read configuration file to String"))
+            };
 
-            return serde_yaml::from_str(&config_contents).expect("Unable to parse configuration file. Is your syntax valid?");
+            match serde_yaml::from_str(&config_contents) {
+                Ok(c) => Ok(c),
+                Err(e) => Err(error!(e, "Failed to deserialize configuration file"))
+            }
         }
     }
 
-    fn parse_from_env() -> Self {
-        use std::env;
-        use std::process;
-
-        let espo_url = env::var("ESPO_URL");
-        if espo_url.is_err() {
-            eprintln!("Environmental variable 'ESPO_URL' is not set. Exiting");
-            process::exit(1);
-        }
-
-        let api_key = env::var("API_KEY");
-        if api_key.is_err() {
-            eprintln!("Environmental variable 'API_KEY' is not set. Exiting");
-            process::exit(1);
-        }
-
-        let secret_key = env::var("SECRET_KEY");
-        if secret_key.is_err() {
-            eprintln!("Environmental variable 'SECRET_KEY' is not set. Not using HMAC Authentication. It is highly recommended that you use this!");
-        }
-
-        Config {
-            espo_url: espo_url.unwrap(),
-            api_key: api_key.unwrap(),
-            secret_key: if secret_key.is_err() { None } else { Some(secret_key.unwrap()) }
+    fn parse_from_env() -> Result<Self> {
+        match envy::from_env::<Self>() {
+            Ok(c) => Ok(c),
+            Err(e) => Err(error!(e, "Failed to create Config instance from environmental variables"))
         }
     }
 }

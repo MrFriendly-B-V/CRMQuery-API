@@ -3,6 +3,9 @@ use crate::appdata::AppData;
 use espocrm_rs::{Where, FilterType, Value, Params, Order};
 use serde::Deserialize;
 
+use crate::error;
+use crate::result::Result;
+
 #[derive(Deserialize)]
 struct Response {
     list: Vec<AccountData>
@@ -21,7 +24,7 @@ pub struct AccountData {
     pub email_address:          Option<String>
 }
 
-pub async fn get_accounts(appdata: &AppData, product: Option<String>, account_type: Option<String>, location_type: Option<String>, province: Option<String>) -> Result<Vec<AccountData>, String> {
+pub async fn get_accounts(appdata: &AppData, product: Option<String>, account_type: Option<String>, location_type: Option<String>, province: Option<String>) -> Result<Vec<AccountData>> {
     let mut filter = Vec::new();
 
     filter.push(Where {
@@ -82,12 +85,11 @@ pub async fn get_accounts(appdata: &AppData, product: Option<String>, account_ty
         .set_select("id,producten,shippingAddressCity,shippingAddressState,relatieType,name,emailAddress")
         .build();
 
-    let response = appdata.espo_client.request::<()>(Method::GET, "Account".to_string(), Some(params), None).await;
-    if response.is_err() {
-        Err(response.err().unwrap().to_string())
-    } else {
-        let content = response.unwrap();
-        let response_data: Response = content.json().await.unwrap();
-        Ok(response_data.list)
+    match match appdata.espo_client.request::<()>(Method::GET, "Account".to_string(), Some(params), None).await {
+        Ok(r) => r.json::<Response>().await,
+        Err(e) => return Err(error!(e, "Failed to send GET request to EspoCRM"))
+    } {
+        Ok(d) => Ok(d.list),
+        Err(e) => Err(error!(e, "Failed to deserialize response data"))
     }
 }
