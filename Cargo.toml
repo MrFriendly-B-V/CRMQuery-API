@@ -26,8 +26,19 @@ features = ["rustls-tls"]
 
 [dependencies.tokio]
 version = "1.8.2"
-features = ["full"]
+default-features = false
+features = ["rt", "rt-multi-thread"]
 
 [dependencies.log4rs]
 version = "1.0.0"
-features = ["console_appender"]
+default-features = false
+features = ["console_appender", "config_parsing", "yaml_format"]
+
+[dependencies.authlander-client]
+git = "https://github.com/MrFriendly-B-V/AuthlanderClient-rs.git"
+tag = "0.1.0"
+features = ["actix"]
+
+[profile.release]
+lto = true
+panic = "abort"

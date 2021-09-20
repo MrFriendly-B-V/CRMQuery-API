@@ -11,7 +11,7 @@ use log::{error as log_error, info, debug};
 #[actix_web::main]
 pub async fn main() -> std::io::Result<()> {
     log4rs::init_file("./log4rs.yaml", Default::default()).unwrap();
-    info!("Welcome to CRMQuery by MrFriendly B.V.");
+    info!("Starting CRMQuery");
     debug!("Reading configuration...");
     let config = match Config::new() {
         Ok(c) => c,
@@ -21,19 +21,14 @@ pub async fn main() -> std::io::Result<()> {
         }
     };
 
-    let mut espo_client = EspoApiClient::new(&config.espo_url)
-        .set_api_key(&config.api_key).build();
-
-    match &config.secret_key {
-        Some(key) => {
-            let _ = espo_client.set_secret_key(key);
-        },
-        None => {}
-    }
+    let espo_client = EspoApiClient::new(&config.espo_url)
+        .set_api_key(&config.espo_api_key)
+        .set_secret_key(&config.secret_key)
+        .build();
 
     let appdata = AppData {
         config,
-        espo_client: espo_client.build()
+        espo_client
     };
 
     info!("Startup complete.");

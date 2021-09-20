@@ -1,4 +1,4 @@
-use actix_web::{web, post, HttpResponse};
+use actix_web::{web, post, HttpResponse, HttpRequest};
 use crate::AppData;
 use crate::espocrm::contact::{get_contacts, Contact};
 use serde::{Serialize, Deserialize};
@@ -33,11 +33,18 @@ pub struct ResultData {
 }
 
 #[post("/query")]
-pub async fn get(form: web::Form<Request>, appdata: web::Data<AppData>) -> HttpResponse {
+pub async fn get(form: web::Json<Request>, data: web::Data<AppData>, req: HttpRequest) -> HttpResponse {
     let runtime = tokio::runtime::Runtime::new().expect("Unable to create Tokio runtime");
     let _guard = runtime.enter();
 
-    let accounts = match crate::espocrm::account::get_accounts(&appdata, form.products.clone(), form.relation_type.clone(), form.location_type.clone(), form.province.clone()).await {
+    match authlander_client::check_session(req, &data.config.authlander_host, vec!["mrfriendly.crmquery.query"]).await {
+        Ok(_) => {},
+        Err(authlander_client::Error::InternalError) => return HttpResponse::InternalServerError().finish(),
+        Err(authlander_client::Error::MissingAuthHeader) | Err(authlander_client::Error::AuthHeaderNonAscii) => return HttpResponse::BadRequest().body("Invalid or missing header 'Authorization'"),
+        Err(authlander_client::Error::InvalidSession) | Err(authlander_client::Error::MissingScopes) => return HttpResponse::Unauthorized().finish()
+    }
+
+    let accounts = match crate::espocrm::account::get_accounts(&data, form.products.clone(), form.relation_type.clone(), form.location_type.clone(), form.province.clone()).await {
         Ok(ac) => ac,
         Err(e) => {
             log::warn!("Failed to query Accounts from EspoCRM: '{}'", e);
@@ -67,7 +74,7 @@ pub async fn get(form: web::Form<Request>, appdata: web::Data<AppData>) -> HttpR
             _ => {}
         }
 
-        let contacts = match get_contacts(&appdata, Some(account.id.clone()), form.contact_role.clone()).await {
+        let contacts = match get_contacts(&data, Some(account.id.clone()), form.contact_role.clone()).await {
             Ok(c) => c,
             Err(e) => {
                 log::warn!("Failed to query Contacts from EspoCRM for account '{}': {}", &account.id, e);
