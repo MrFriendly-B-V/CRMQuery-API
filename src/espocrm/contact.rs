@@ -30,7 +30,7 @@ pub async fn get_contacts(appdata: &AppData, account_id: Option<String>, contact
             r#type: FilterType::IsFalse,
             attribute: "geenmassmailing".to_string(),
             value: None,
-        }
+        },
     ];
 
     if account_id.is_some() {

@@ -38,7 +38,7 @@ pub async fn get_accounts(
             r#type: FilterType::IsFalse,
             attribute: "excludeFromMailing".to_string(),
             value: None,
-        }
+        },
     ];
 
     if product.is_some() {
