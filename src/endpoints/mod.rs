@@ -1,27 +1,27 @@
 pub mod query;
 
-use paperclip::actix::Apiv2Security;
-use actix_web::{FromRequest, HttpRequest};
+use crate::AppData;
 use actix_web::dev::Payload;
 use actix_web::web::Data;
+use actix_web::{FromRequest, HttpRequest};
 use futures_util::future::{err, ok, Ready};
+use paperclip::actix::Apiv2Security;
 use serde::Serialize;
-use crate::AppData;
 
 #[derive(Serialize)]
 pub struct GenericResponse<T> {
     #[serde(flatten)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub data:   Option<T>,
+    pub data: Option<T>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub error:  Option<HttpError>
+    pub error: Option<HttpError>,
 }
 
 #[derive(Serialize)]
 pub struct HttpError {
-    pub location:   &'static str,
-    pub message:    String
+    pub location: &'static str,
+    pub message: String,
 }
 
 #[derive(Apiv2Security)]
@@ -39,12 +39,11 @@ impl FromRequest for Session {
 
         let data: &Data<AppData> = req.app_data().unwrap();
         match runtime.block_on(authlander_client::check_session(req.clone(), &data.config.authlander_host, vec!["mrfriendly.crmquery.query"])) {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(authlander_client::Error::InternalError) => return err(Self::Error::Authlander),
             _ => return err(Self::Error::Unauthorized),
         };
 
         ok(Self)
     }
-    
 }

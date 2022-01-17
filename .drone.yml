@@ -1,5 +1,5 @@
 kind: pipeline
-type: kubernetes
+type: docker
 name: build-latest
 
 trigger:
@@ -9,9 +9,6 @@ trigger:
 steps:
 - name: Build Docker
   image: plugins/docker
-  resources:
-    limits:
-      cpu: 6000
   settings:
     repo: docker-registry.k8s.array21.dev/mrfriendly-crmquery-api
     tags:
@@ -26,9 +23,10 @@ steps:
     username: Drone CI/CD - MrFriendly CRMQuery API - build-latest
   when:
     status: [ failure ]
+
 ---
 kind: pipeline
-type: kubernetes
+type: docker
 name: build-release
 
 trigger:
@@ -38,9 +36,6 @@ trigger:
 steps:
 - name: Build Docker
   image: plugins/docker
-  resources:
-    limits:
-      cpu: 6000
   settings:
     repo: docker-registry.k8s.array21.dev/mrfriendly-crmquery-api
     registry: docker-registry.k8s.array21.dev
@@ -78,29 +73,33 @@ steps:
     status: [ failure ]
 ---
 kind: pipeline
-type: kubernetes
-name: build-and-test
-
-trigger:
-  event:
-  - pull_request
-  - push
+type: docker
+name: test
 
 steps:
 - name: Cargo
-  image: rust:1.53.0-bullseye
-  resources:
-    limits:
-      cpu: 6000
+  image: docker-registry.k8s.array21.dev/rust-base
   commands:
-  - cargo build
   - cargo test
+---
+kind: pipeline
+type: docker
+name: clippy
 
-- name: Slack notifications
-  image: plugins/slack
-  settings:
-    webhook:
-      from_secret: discord_webhook
-    username: Drone CI/CD - MrFriendly CRMQuery API - build-and-test
-  when:
-    status: [ failure ]
+steps:
+  - name: clippy
+    image: docker-registry.k8s.array21.dev/rust-base
+    environment:
+      RUSTFLAGS: '-Dwarnings'
+    commands:
+      - cargo clippy
+---
+kind: pipeline
+type: docker
+name: fmt
+
+steps:
+  - name: fmt
+    image: docker-registry.k8s.array21.dev/rust-base
+    commands:
+      - 'cargo fmt --all -- --check'

@@ -1,13 +1,13 @@
-mod espocrm;
 mod appdata;
 mod endpoints;
 mod error;
+mod espocrm;
 
-use actix_web::{HttpServer, App};
 use crate::appdata::{AppData, Config};
+use actix_web::{App, HttpServer};
 use espocrm_rs::EspoApiClient;
-use log::{error, info, debug};
-use paperclip::actix::{OpenApiExt, web};
+use log::{debug, error, info};
+use paperclip::actix::{web, OpenApiExt};
 
 #[actix_web::main]
 pub async fn main() -> std::io::Result<()> {
@@ -31,10 +31,7 @@ pub async fn main() -> std::io::Result<()> {
         .set_secret_key(&config.secret_key)
         .build();
 
-    let appdata = AppData {
-        config,
-        espo_client
-    };
+    let appdata = AppData { config, espo_client };
 
     info!("Startup complete.");
 
@@ -54,5 +51,4 @@ pub async fn main() -> std::io::Result<()> {
     .bind("[::]:8080")?
     .run()
     .await
-
 }
