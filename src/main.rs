@@ -1,22 +1,27 @@
 mod espocrm;
 mod appdata;
 mod endpoints;
-mod result;
+mod error;
 
 use actix_web::{HttpServer, App};
 use crate::appdata::{AppData, Config};
 use espocrm_rs::EspoApiClient;
-use log::{error as log_error, info, debug};
+use log::{error, info, debug};
+use paperclip::actix::{OpenApiExt, web};
 
 #[actix_web::main]
 pub async fn main() -> std::io::Result<()> {
-    log4rs::init_file("./log4rs.yaml", Default::default()).unwrap();
+    if std::env::var("RUST_LOG").is_err() {
+        std::env::set_var("RUST_LOG", "INFO");
+    }
+    env_logger::init();
+
     info!("Starting CRMQuery");
     debug!("Reading configuration...");
     let config = match Config::new() {
         Ok(c) => c,
         Err(e) => {
-            log_error!("Failed to create Config instance: {}", e);
+            error!("Failed to create Config instance: {}", e);
             std::process::exit(1);
         }
     };
@@ -37,11 +42,16 @@ pub async fn main() -> std::io::Result<()> {
         let cors = actix_cors::Cors::permissive();
 
         App::new()
+            .wrap_api()
             .data(appdata.clone())
-            .service(crate::endpoints::query::get)
             .wrap(cors)
+            .wrap(actix_web::middleware::Logger::default())
+            .wrap(actix_web::middleware::NormalizePath::new(actix_web::middleware::normalize::TrailingSlash::Trim))
+            .route("/query", web::post().to(crate::endpoints::query::query))
+            .with_json_spec_at("/spec")
+            .build()
     })
-    .bind("0.0.0.0:8080")?
+    .bind("[::]:8080")?
     .run()
     .await
 

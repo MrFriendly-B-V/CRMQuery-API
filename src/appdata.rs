@@ -1,7 +1,6 @@
 use serde::{Serialize, Deserialize};
 use espocrm_rs::EspoApiClient;
-use crate::result::Result;
-use crate::error;
+use crate::error::Result;
 
 #[derive(Clone)]
 pub struct AppData {
@@ -19,9 +18,6 @@ pub struct Config {
 
 impl Config {
     pub fn new() -> Result<Self> {
-        match envy::from_env::<Self>() {
-            Ok(c) => Ok(c),
-            Err(e) => Err(error!(e, "Failed to create Config instance from environmental variables"))
-        }
+        Ok(envy::from_env::<Self>()?)
     }
 }

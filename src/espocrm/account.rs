@@ -1,10 +1,7 @@
-use reqwest::Method;
 use crate::appdata::AppData;
-use espocrm_rs::{Where, FilterType, Value, Params, Order};
+use espocrm_rs::{Where, FilterType, Value, Params, Order, Method};
 use serde::Deserialize;
-
-use crate::error;
-use crate::result::Result;
+use crate::error::Result;
 
 #[derive(Deserialize)]
 struct Response {
@@ -85,11 +82,10 @@ pub async fn get_accounts(appdata: &AppData, product: Option<String>, account_ty
         .set_select("id,producten,shippingAddressCity,shippingAddressState,relatieType,name,emailAddress")
         .build();
 
-    match match appdata.espo_client.request::<()>(Method::GET, "Account".to_string(), Some(params), None).await {
-        Ok(r) => r.json::<Response>().await,
-        Err(e) => return Err(error!(e, "Failed to send GET request to EspoCRM"))
-    } {
-        Ok(d) => Ok(d.list),
-        Err(e) => Err(error!(e, "Failed to deserialize response data"))
-    }
+    let response: Response = appdata.espo_client.request::<(), &str>(Method::Get, "Account", Some(params), None)
+        .await?
+        .json()
+        .await?;
+
+    Ok(response.list)
 }

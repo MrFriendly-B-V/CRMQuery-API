@@ -1,11 +1,11 @@
-use actix_web::{web, post, HttpResponse, HttpRequest};
+use paperclip::actix::{web, Apiv2Schema, api_v2_operation};
 use crate::AppData;
 use crate::espocrm::contact::{get_contacts, Contact};
 use serde::{Serialize, Deserialize};
+use crate::endpoints::Session;
+use crate::error::Result;
 
-use crate::respond;
-
-#[derive(Deserialize)]
+#[derive(Deserialize, Apiv2Schema)]
 pub struct Request {
     products:       Option<String>,
     relation_type:  Option<String>,
@@ -15,12 +15,12 @@ pub struct Request {
     contact_role:   Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Apiv2Schema)]
 pub struct ResponseData {
     result: Vec<ResultData>
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Apiv2Schema)]
 pub struct ResultData {
     account_id:             String,
     account_products:       Option<Vec<String>>,
@@ -32,30 +32,22 @@ pub struct ResultData {
     shipping_address_state: Option<String>
 }
 
-#[post("/query")]
-pub async fn get(form: web::Json<Request>, data: web::Data<AppData>, req: HttpRequest) -> HttpResponse {
+#[api_v2_operation]
+pub async fn query(data: web::Data<AppData>, payload: web::Json<Request>, _session: Session) -> Result<web::Json<ResponseData>> {
     let runtime = tokio::runtime::Runtime::new().expect("Unable to create Tokio runtime");
     let _guard = runtime.enter();
 
-    match authlander_client::check_session(req, &data.config.authlander_host, vec!["mrfriendly.crmquery.query"]).await {
-        Ok(_) => {},
-        Err(authlander_client::Error::InternalError) => return HttpResponse::InternalServerError().finish(),
-        Err(authlander_client::Error::MissingAuthHeader) | Err(authlander_client::Error::AuthHeaderNonAscii) => return HttpResponse::BadRequest().body("Invalid or missing header 'Authorization'"),
-        Err(authlander_client::Error::InvalidSession) | Err(authlander_client::Error::MissingScopes) => return HttpResponse::Unauthorized().finish()
-    }
-
-    let accounts = match crate::espocrm::account::get_accounts(&data, form.products.clone(), form.relation_type.clone(), form.location_type.clone(), form.province.clone()).await {
-        Ok(ac) => ac,
-        Err(e) => {
-            log::warn!("Failed to query Accounts from EspoCRM: '{}'", e);
-            return HttpResponse::InternalServerError().body(respond!("accounts", "Failed to query Accounts from EspoCRM"));
-        }
-    };
+    let accounts = crate::espocrm::account::get_accounts(
+        &data,
+        payload.products.clone(),
+        payload.relation_type.clone(),
+        payload.location_type.clone(),
+        payload.province.clone()).await?;
 
     let mut results: Vec<ResultData> = Vec::new();
 
     'account_loop: for account in accounts {
-        match (&form.city, &account.shipping_address_city) {
+        match (&payload.city, &account.shipping_address_city) {
             (Some(city), Some(shipping_city)) => {
                 let shipping_city = shipping_city.to_lowercase();
                 let city = city.to_lowercase();
@@ -74,13 +66,7 @@ pub async fn get(form: web::Json<Request>, data: web::Data<AppData>, req: HttpRe
             _ => {}
         }
 
-        let contacts = match get_contacts(&data, Some(account.id.clone()), form.contact_role.clone()).await {
-            Ok(c) => c,
-            Err(e) => {
-                log::warn!("Failed to query Contacts from EspoCRM for account '{}': {}", &account.id, e);
-                return HttpResponse::InternalServerError().body(respond!("contacts", format!("Failed to query Contacts from EspoCRM for account '{}'", &account.id)));
-            }
-        };
+        let contacts = get_contacts(&data, Some(account.id.clone()), payload.contact_role.clone()).await?;
 
         let result = ResultData {
             account_id: account.id.clone(),
@@ -97,5 +83,7 @@ pub async fn get(form: web::Json<Request>, data: web::Data<AppData>, req: HttpRe
     }
 
     runtime.shutdown_background();
-    HttpResponse::Ok().body(respond!(ResponseData { result: results }))
+    Ok(web::Json(ResponseData {
+        result: results
+    }))
 }

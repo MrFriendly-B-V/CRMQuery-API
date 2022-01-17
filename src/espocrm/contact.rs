@@ -1,17 +1,15 @@
 use crate::appdata::AppData;
-use reqwest::Method;
-use espocrm_rs::{Where, FilterType, Params, Order, Value};
+use espocrm_rs::{Where, FilterType, Params, Order, Value, Method};
 use serde::{Deserialize, Serialize};
+use paperclip::actix::Apiv2Schema;
+use crate::error::Result;
 
-use crate::error;
-use crate::result::Result;
-
-#[derive(Deserialize)]
+#[derive(Deserialize, Apiv2Schema)]
 struct Response {
     list: Vec<Contact>
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Apiv2Schema)]
 #[serde(rename_all = "camelCase")]
 pub struct Contact {
     pub id:             Option<String>,
@@ -60,11 +58,9 @@ pub async fn get_contacts(appdata: &AppData, account_id: Option<String>, contact
         .set_where(where_filter)
         .build();
 
-    match match appdata.espo_client.request::<()>(Method::GET, "Contact".to_string(), Some(params), None).await {
-        Ok(r) => r.json::<Response>().await,
-        Err(e) => return Err(error!(e, "Failed to send GET request to EspoCRM"))
-    } {
-        Ok(d) => Ok(d.list),
-        Err(e) => Err(error!(e, "Failed to deserialize response data"))
-    }
+    let response: Response = appdata.espo_client.request::<(), &str>(Method::Get, "Contact", Some(params), None)
+        .await?
+        .json()
+        .await?;
+    Ok(response.list)
 }
