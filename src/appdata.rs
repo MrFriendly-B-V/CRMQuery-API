@@ -2,13 +2,13 @@ use crate::error::Result;
 use espocrm_rs::EspoApiClient;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct AppData {
     pub config: Config,
     pub espo_client: EspoApiClient,
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Config {
     pub espo_url: String,
     pub espo_api_key: String,

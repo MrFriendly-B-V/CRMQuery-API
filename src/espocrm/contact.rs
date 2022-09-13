@@ -1,15 +1,16 @@
 use crate::appdata::AppData;
 use crate::error::Result;
 use espocrm_rs::{FilterType, Method, Order, Params, Value, Where};
-use paperclip::actix::Apiv2Schema;
 use serde::{Deserialize, Serialize};
+use tap::TapFallible;
+use tracing::{instrument, trace, warn};
 
-#[derive(Deserialize, Apiv2Schema)]
+#[derive(Debug, Deserialize)]
 struct Response {
     list: Vec<Contact>,
 }
 
-#[derive(Deserialize, Serialize, Apiv2Schema)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Contact {
     pub id: Option<String>,
@@ -19,6 +20,7 @@ pub struct Contact {
     pub phone_number: Option<String>,
 }
 
+#[instrument(skip(appdata))]
 pub async fn get_contacts(appdata: &AppData, account_id: Option<String>, contact_roles: Option<String>) -> Result<Vec<Contact>> {
     let mut where_filter = vec![
         Where {
@@ -57,11 +59,17 @@ pub async fn get_contacts(appdata: &AppData, account_id: Option<String>, contact
         .set_where(where_filter)
         .build();
 
-    let response: Response = appdata
+    trace!("Fetching contacts with the following filter: {params:?}");
+
+    let response_text = appdata
         .espo_client
         .request::<(), &str>(Method::Get, "Contact", Some(params), None)
         .await?
-        .json()
+        .text()
         .await?;
+
+    let response: Response = serde_json::from_str(&response_text)
+        .tap_err(|e| warn!("Unable to deserialize response from EspoCRM: {e:?}. The response was: {response_text}"))?;
+
     Ok(response.list)
 }

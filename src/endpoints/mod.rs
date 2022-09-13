@@ -1,49 +1,50 @@
 pub mod query;
 
+use std::future::Future;
+use std::pin::Pin;
 use crate::AppData;
 use actix_web::dev::Payload;
 use actix_web::web::Data;
 use actix_web::{FromRequest, HttpRequest};
-use futures_util::future::{err, ok, Ready};
-use paperclip::actix::Apiv2Security;
 use serde::Serialize;
+use tracing::warn;
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct GenericResponse<T> {
     #[serde(flatten)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<T>,
-
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<HttpError>,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct HttpError {
     pub location: &'static str,
     pub message: String,
 }
 
-#[derive(Apiv2Security)]
-#[openapi(apiKey, in = "header", name = "Authorization")]
+#[derive(Debug)]
 pub struct Session;
 
 impl FromRequest for Session {
     type Error = crate::error::Error;
-    type Future = Ready<Result<Self, Self::Error>>;
-    type Config = ();
+    type Future = Pin<Box<dyn Future<Output = Result<Self, Self::Error>>>>;
 
-    fn from_request(req: &HttpRequest, _payload: &mut Payload) -> Self::Future {
-        let runtime = tokio::runtime::Runtime::new().expect("Unable to create Tokio runtime");
-        let _guard = runtime.enter();
+    fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
+        let req = req.clone();
+        Box::pin(async move {
+            let data: &Data<AppData> = req.app_data().unwrap();
+            let host = data.config.authlander_host.clone();
 
-        let data: &Data<AppData> = req.app_data().unwrap();
-        match runtime.block_on(authlander_client::check_session(req.clone(), &data.config.authlander_host, vec!["mrfriendly.crmquery.query"])) {
-            Ok(_) => {}
-            Err(authlander_client::Error::InternalError) => return err(Self::Error::Authlander),
-            _ => return err(Self::Error::Unauthorized),
-        };
-
-        ok(Self)
+            match authlander_client::check_session(req, &host, vec!["mrfriendly.crmquery.query"]).await {
+                Ok(_) => Ok(Session),
+                Err(e) if matches!(&e, authlander_client::Error::InternalError( .. )) => {
+                    warn!("Authlander internal error: {e:?}");
+                    Err(Self::Error::Authlander)
+                },
+                _ => Err(Self::Error::Unauthorized),
+            }
+        })
     }
 }

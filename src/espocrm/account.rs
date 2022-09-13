@@ -2,13 +2,15 @@ use crate::appdata::AppData;
 use crate::error::Result;
 use espocrm_rs::{FilterType, Method, Order, Params, Value, Where};
 use serde::Deserialize;
+use tap::TapFallible;
+use tracing::{instrument, trace, warn};
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 struct Response {
     list: Vec<AccountData>,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountData {
     pub id: String,
@@ -21,6 +23,7 @@ pub struct AccountData {
     pub email_address: Option<String>,
 }
 
+#[instrument(skip(appdata))]
 pub async fn get_accounts(
     appdata: &AppData,
     product: Option<String>,
@@ -87,12 +90,16 @@ pub async fn get_accounts(
         .set_select("id,producten,shippingAddressCity,shippingAddressState,relatieType,name,emailAddress")
         .build();
 
-    let response: Response = appdata
+    trace!("Fetching accounts with the following filter: {params:?}");
+    let response_text = appdata
         .espo_client
         .request::<(), &str>(Method::Get, "Account", Some(params), None)
         .await?
-        .json()
+        .text()
         .await?;
+
+    let response: Response = serde_json::from_str(&response_text)
+        .tap_err(|e| warn!("Unable to deserialize response from EspoCRM: {e:?}. The response was: {response_text}"))?;
 
     Ok(response.list)
 }

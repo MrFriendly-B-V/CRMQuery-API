@@ -1,48 +1,46 @@
 [package]
 name = "crm_query"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Tobias de Bruijn <t.debruijn@array21.dev>"]
 edition = "2021"
 
 [dependencies]
-serde_json = "1.0.64"
-espocrm-rs = "0.3.1"
-actix-web = "3.3.2"
-actix-cors = "0.5.4"
+serde_json = "1.0.85"
+actix-web = "4.1.0"
+actix-cors = "0.6.2"
 envy = "0.4.2"
-log = "0.4.14"
-env_logger = "0.9.0"
+tracing = "0.1.36"
+tracing-actix-web = "0.6.0"
 thiserror = "1.0.30"
 futures-util = "0.3.19"
+tap = "1.0.1"
+
+[dependencies.espocrm-rs]
+version = "0.4.0"
+features = ["tracing"]
+
+[dependencies.tracing-subscriber]
+version = "0.3.15"
+features = ["env-filter"]
 
 [dependencies.serde]
-version = "1.0.123"
+version = "1.0.144"
 features = ["derive"]
 
 [dependencies.reqwest]
-version = "^0.11"
+version = "0.11.11"
 default-features = false
-features = ["rustls-tls"]
+features = ["rustls-tls", "json"]
 
 [dependencies.tokio]
-version = "^1.8"
+version = "1.21.0"
 default-features = false
 features = ["rt", "rt-multi-thread"]
 
 [dependencies.authlander-client]
 git = "https://github.com/MrFriendly-B-V/AuthlanderClient-rs.git"
-tag = "0.1.0"
-features = ["actix"]
-
-[dependencies.paperclip]
-version = "0.6.1"
-default-features = false
-features = ["actix", "path-in-definition"]
-
-[patch.crates-io.paperclip]
-git = "https://github.com/TobiasDeBruijn/paperclip"
-branch = "path-tuple-and-path-name"
+tag = "0.2.0"
+features = ["actix4"]
 
 [profile.release]
-lto = true
-panic = "abort"
+strip = true

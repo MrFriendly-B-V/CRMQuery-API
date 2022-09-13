@@ -1,11 +1,12 @@
+use actix_web::web;
 use crate::endpoints::Session;
 use crate::error::Result;
 use crate::espocrm::contact::{get_contacts, Contact};
 use crate::AppData;
-use paperclip::actix::{api_v2_operation, web, Apiv2Schema};
 use serde::{Deserialize, Serialize};
+use tracing::{debug, instrument, trace};
 
-#[derive(Deserialize, Apiv2Schema)]
+#[derive(Debug, Deserialize)]
 pub struct Request {
     products: Option<String>,
     relation_type: Option<String>,
@@ -15,12 +16,12 @@ pub struct Request {
     contact_role: Option<String>,
 }
 
-#[derive(Serialize, Apiv2Schema)]
+#[derive(Debug, Serialize)]
 pub struct ResponseData {
     result: Vec<ResultData>,
 }
 
-#[derive(Serialize, Apiv2Schema)]
+#[derive(Debug, Serialize)]
 pub struct ResultData {
     account_id: String,
     account_products: Option<Vec<String>>,
@@ -32,11 +33,9 @@ pub struct ResultData {
     shipping_address_state: Option<String>,
 }
 
-#[api_v2_operation]
-pub async fn query(data: web::Data<AppData>, payload: web::Json<Request>, _session: Session) -> Result<web::Json<ResponseData>> {
-    let runtime = tokio::runtime::Runtime::new().expect("Unable to create Tokio runtime");
-    let _guard = runtime.enter();
-
+#[instrument(skip(data))]
+pub async fn query(data: web::Data<AppData>, payload: web::Json<Request>, _: Session) -> Result<web::Json<ResponseData>> {
+    debug!("Fetching accounts from EspoCRM");
     let accounts = crate::espocrm::account::get_accounts(
         &data,
         payload.products.clone(),
@@ -48,8 +47,11 @@ pub async fn query(data: web::Data<AppData>, payload: web::Json<Request>, _sessi
 
     let mut results: Vec<ResultData> = Vec::new();
 
+    debug!("Iterating over accounts to fetch associated data");
     'account_loop: for account in accounts {
         if let (Some(city), Some(shipping_city)) = (&payload.city, &account.shipping_address_city) {
+            trace!("Account {} has a a city and shipping address", &account.name);
+
             let shipping_city = shipping_city.to_lowercase();
             let city = city.to_lowercase();
 
@@ -61,10 +63,12 @@ pub async fn query(data: web::Data<AppData>, payload: web::Json<Request>, _sessi
             }
 
             if !r#match {
+                trace!("Account {} does not match the requirments", account.name);
                 continue 'account_loop;
             }
         }
 
+        debug!("Fetching contacts for account {}", account.id);
         let contacts = get_contacts(&data, Some(account.id.clone()), payload.contact_role.clone()).await?;
 
         let result = ResultData {
@@ -81,6 +85,5 @@ pub async fn query(data: web::Data<AppData>, payload: web::Json<Request>, _sessi
         results.push(result);
     }
 
-    runtime.shutdown_background();
     Ok(web::Json(ResponseData { result: results }))
 }
